@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Pi Server</title>
+<style>
+  :root {
+    --bg: #0b0d14;
+    --surface: #13151f;
+    --surface2: #1c1f2e;
+    --border: #2a2d42;
+    --accent: #a78bfa;
+    --accent2: #60a5fa;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    padding: 24px 16px 60px;
+  }
+  header { text-align: center; margin-bottom: 28px; }
+  h1 { font-size: 1.7rem; font-weight: 800; color: var(--text); }
+  h1 span { color: var(--accent); }
+  header p { color: var(--muted); font-size: 0.9rem; margin-top: 6px; }
+
+  h2.page-section {
+    max-width: 1100px;
+    margin: 0 auto 4px;
+    font-size: 1.15rem;
+    font-weight: 800;
+    padding-top: 8px;
+  }
+  h2.page-section span.icon { margin-right: 6px; }
+  p.page-sub {
+    max-width: 1100px;
+    margin: 0 auto 18px;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .divider {
+    max-width: 1100px;
+    margin: 40px auto 30px;
+    border: none;
+    border-top: 1px solid var(--border);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 14px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  a.tile, div.tile {
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    text-decoration: none;
+    color: var(--text);
+    transition: border-color 150ms ease, transform 150ms ease;
+    min-height: 130px;
+    position: relative;
+  }
+  a.tile:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+  div.tile {
+    color: var(--muted);
+    opacity: 0.7;
+  }
+  div.tile .tile-icon { filter: grayscale(40%); }
+
+  .tile-icon { font-size: 1.6rem; margin-bottom: 8px; }
+  .tile-name { font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; color: var(--text); }
+  .tile-desc { font-size: 0.78rem; color: var(--muted); line-height: 1.4; flex: 1; }
+  .tile-link { font-size: 0.7rem; color: var(--accent2); margin-top: 8px; font-family: monospace; }
+
+  .badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: var(--surface2);
+    color: var(--accent2);
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    border-radius: 20px;
+  }
+
+  .section-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 22px auto 10px;
+    max-width: 1100px;
+  }
+
+  .ssd-banner {
+    max-width: 1100px;
+    margin: 14px auto 22px;
+    background: linear-gradient(135deg, rgba(167,139,250,0.12), rgba(96,165,250,0.12));
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .ssd-banner strong { color: var(--text); }
+
+  .note {
+    max-width: 1100px;
+    margin: 30px auto 0;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
+  .note strong { color: var(--text); }
+
+  .tabs {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 28px;
+  }
+  .tab-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.9rem;
+    font-weight: 700;
+    padding: 10px 22px;
+    border-radius: 24px;
+    cursor: pointer;
+    transition: all 150ms ease;
+  }
+  .tab-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #0b0d14;
+  }
+  .page {
+    display: none;
+  }
+  .page.active {
+    display: block;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>My <span>Pi Server</span></h1>
+  <p>Everything in one place</p>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="current" onclick="showTab('current')">✅ Current</button>
+  <button class="tab-btn" data-tab="future" onclick="showTab('future')">🕓 Future</button>
+</div>
+
+<!-- ============ AVAILABLE NOW ============ -->
+<div class="page active" id="page-current">
+<h2 class="page-section"><span class="icon">✅</span>What I Can Use Right Now</h2>
+<p class="page-sub">Live and ready &mdash; tap a tile to open it</p>
+
+<p class="section-label">Media</p>
+<div class="grid">
+  <a class="tile" href="http://piserver.local:8096" target="_blank">
+    <div class="tile-icon">🎬</div>
+    <div class="tile-name">Jellyfin</div>
+    <div class="tile-desc">Watch your movies and TV shows, like a private Netflix.</div>
+    <div class="tile-link">:8096</div>
+  </a>
+  <a class="tile" href="http://piserver.local:4533" target="_blank">
+    <div class="tile-icon">🎵</div>
+    <div class="tile-name">Navidrome</div>
+    <div class="tile-desc">Stream your music library from any device.</div>
+    <div class="tile-link">:4533</div>
+  </a>
+  <a class="tile" href="http://piserver.local:8083" target="_blank">
+    <div class="tile-icon">📚</div>
+    <div class="tile-name">Calibre-Web</div>
+    <div class="tile-desc">Browse and read your ebook collection.</div>
+    <div class="tile-link">:8083</div>
+  </a>
+  <a class="tile" href="http://piserver.local:9925" target="_blank">
+    <div class="tile-icon">🍳</div>
+    <div class="tile-name">Mealie</div>
+    <div class="tile-desc">Save and organize recipes.</div>
+    <div class="tile-link">:9925</div>
+  </a>
+</div>
+
+<p class="section-label">Media Automation</p>
+<div class="grid">
+  <a class="tile" href="http://piserver.local:8989" target="_blank">
+    <div class="tile-icon">📺</div>
+    <div class="tile-name">Sonarr</div>
+    <div class="tile-desc">Tell it a TV show you want &mdash; it tracks and grabs new episodes.</div>
+    <div class="tile-link">:8989</div>
+  </a>
+  <a class="tile" href="http://piserver.local:7878" target="_blank">
+    <div class="tile-icon">🎥</div>
+    <div class="tile-name">Radarr</div>
+    <div class="tile-desc">Same idea as Sonarr, but for movies.</div>
+    <div class="tile-link">:7878</div>
+  </a>
+  <a class="tile" href="http://piserver.local:9696" target="_blank">
+    <div class="tile-icon">🔎</div>
+    <div class="tile-name">Prowlarr</div>
+    <div class="tile-desc">Manages the search sources Sonarr/Radarr use to find content.</div>
+    <div class="tile-link">:9696</div>
+  </a>
+  <a class="tile" href="http://piserver.local:8090" target="_blank">
+    <div class="tile-icon">⬇️</div>
+    <div class="tile-name">qBittorrent</div>
+    <div class="tile-desc">The actual download engine behind Sonarr/Radarr.</div>
+    <div class="tile-link">:8090</div>
+  </a>
+</div>
+
+<p class="section-label">Home</p>
+<div class="grid">
+  <a class="tile" href="http://piserver.local:8123" target="_blank">
+    <div class="tile-icon">🏡</div>
+    <div class="tile-name">Home Assistant</div>
+    <div class="tile-desc">Control smart lights, sensors, and devices from one place.</div>
+    <div class="tile-link">:8123</div>
+  </a>
+  <a class="tile" href="http://piserver.local:1880" target="_blank">
+    <div class="tile-icon">🔗</div>
+    <div class="tile-name">Node-RED</div>
+    <div class="tile-desc">Build automations by dragging boxes together &mdash; no coding.</div>
+    <div class="tile-link">:1880</div>
+  </a>
+  <a class="tile" href="http://piserver.local:9283" target="_blank">
+    <div class="tile-icon">🥫</div>
+    <div class="tile-name">Grocy</div>
+    <div class="tile-desc">Track what's in your pantry and your shopping list.</div>
+    <div class="tile-link">:9283</div>
+  </a>
+  <a class="tile" href="http://piserver.local:5678" target="_blank">
+    <div class="tile-icon">⚡</div>
+    <div class="tile-name">n8n</div>
+    <div class="tile-desc">Connect apps together and automate routine tasks.</div>
+    <div class="tile-link">:5678</div>
+  </a>
+</div>
+
+<p class="section-label">Network &amp; Admin</p>
+<div class="grid">
+  <a class="tile" href="http://piserver.local:8080/admin" target="_blank">
+    <div class="tile-icon">🛡️</div>
+    <div class="tile-name">Pi-hole</div>
+    <div class="tile-desc">Blocks ads and trackers network-wide.</div>
+    <div class="tile-link">:8080/admin</div>
+  </a>
+  <a class="tile" href="http://piserver.local:9000" target="_blank">
+    <div class="tile-icon">🐳</div>
+    <div class="tile-name">Portainer</div>
+    <div class="tile-desc">See and manage every running service on the Pi.</div>
+    <div class="tile-link">:9000</div>
+  </a>
+  <a class="tile" href="http://piserver.local:81" target="_blank">
+    <div class="tile-icon">🔀</div>
+    <div class="tile-name">Nginx Proxy Manager</div>
+    <div class="tile-desc">Sets up clean URLs and SSL for services.</div>
+    <div class="tile-link">:81</div>
+  </a>
+  <a class="tile" href="file://\\piserver.local\media">
+    <div class="tile-icon">📁</div>
+    <div class="tile-name">File Shares</div>
+    <div class="tile-desc">Drag and drop movies, shows, or ROMs from Windows.</div>
+    <div class="tile-link">\\piserver.local\media</div>
+  </a>
+</div>
+
+<div class="note">
+  <strong>Note:</strong> these links work from any device on your home network. Once Tailscale is set up on your phone, they'll also work from anywhere &mdash; just use the Tailscale IP instead of <code>piserver.local</code> when you're away from home.
+</div>
+</div><!-- /page-current -->
+
+<!-- ============ COMING SOON ============ -->
+<div class="page" id="page-future">
+<h2 class="page-section"><span class="icon">🕓</span>Coming Soon</h2>
+<p class="page-sub">Waiting on the NVMe SSD before these get installed</p>
+
+<div class="ssd-banner">
+  Once the 2TB SSD is in and the Pi's migrated over, all of this gets installed in one session &mdash; <strong>nothing here is broken, it just doesn't exist yet.</strong>
+</div>
+
+<p class="section-label">AI</p>
+<div class="grid">
+  <div class="tile"><span class="badge">Soon</span>
+    <div class="tile-icon">🤖</div>
+    <div class="tile-name">Open WebUI</div>
+    <div class="tile-desc">Your own private AI chat &mdash; like ChatGPT, but local and free forever.</div>
+  </div>
+  <div class="tile"><span class="badge">Soon</span>
+    <div class="tile-icon">🔍</div>
+    <div class="tile-name">Perplexica</div>
+    <div class="tile-desc">AI-powered search that browses the web for you.</div>
+  </div>
+  <div class="tile"><span class="badge">Soon</span>
+    <div class="tile-icon">🌐</div>
+    <div class="tile-name">SearXNG</div>
+    <div class="tile-desc">Private search engine that feeds your AI without tracking you.</div>
+  </div>
+  <div class="tile"><span class="badge">Soon</span>
+    <div class="tile-icon">🗣️</div>
+    <div class="tile-name">Voice Assistant</div>
+    <div class="tile-desc">Talk to your Pi out loud &mdash; fully offline, no Alexa/Siri.</div>
+  </div>
+</div>
+
+<p class="section-label">Personal Cloud</p>
+<div class="grid">
+  <div class="tile"><span class="badge">Soon</span>
+    <div class="tile-icon">🔑</div>
+    <div class="tile-name">Vaultwarden</div>
+    <div class="tile-desc">Your own private password manager.</div>
+  </div>
+  <div class="tile"><span class="badge">Soon</span>
+    <div class="tile-icon">📷</div>
+    <div class="tile-name">Immich</div>
+    <div class="tile-desc">Auto-backup your phone's photos &mdash; private Google Photos.</div>
+  </div>
+  <div class="tile"><span class="badge">Soon</span>
+    <div class="tile-icon">💰</div>
+    <div class="tile-name">Firefly III</div>
+    <div class="tile-desc">Track spending and budgets.</div>
+  </div>
+  <div class="tile"><span class="badge">Soon</span>
+    <div class="tile-icon">📊</div>
+    <div class="tile-name">Homepage + Uptime Kuma</div>
+    <div class="tile-desc">One dashboard for everything, plus alerts if anything goes down.</div>
+  </div>
+</div>
+
+<p class="section-label">Gaming</p>
+<div class="grid">
+  <div class="tile"><span class="badge">Soon</span>
+    <div class="tile-icon">🎮</div>
+    <div class="tile-name">RetroArch + EmulationStation</div>
+    <div class="tile-desc">Your retro game library, all consoles, one clean interface.</div>
+  </div>
+  <div class="tile"><span class="badge">Soon</span>
+    <div class="tile-icon">🟣</div>
+    <div class="tile-name">Dolphin</div>
+    <div class="tile-desc">GameCube and Wii emulation.</div>
+  </div>
+  <div class="tile"><span class="badge">Soon</span>
+    <div class="tile-icon">🔵</div>
+    <div class="tile-name">DuckStation</div>
+    <div class="tile-desc">PS1 emulation.</div>
+  </div>
+  <div class="tile"><span class="badge">Soon</span>
+    <div class="tile-icon">📡</div>
+    <div class="tile-name">Sunshine</div>
+    <div class="tile-desc">Stream games to your phone or another PC via Moonlight.</div>
+  </div>
+</div>
+
+<p class="section-label">AI Agent</p>
+<div class="grid">
+  <div class="tile"><span class="badge">Soon</span>
+    <div class="tile-icon">🦞</div>
+    <div class="tile-name">OpenClaw</div>
+    <div class="tile-desc">Message your Pi on Discord and it actually takes action &mdash; checks Home Assistant, manages downloads, answers business questions.</div>
+  </div>
+</div>
+</div><!-- /page-future -->
+
+<script>
+  function showTab(name) {
+    document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+    document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+    document.getElementById('page-' + name).classList.add('active');
+    document.querySelector('.tab-btn[data-tab="' + name + '"]').classList.add('active');
+  }
+</script>
+
+</body>
+</html>
