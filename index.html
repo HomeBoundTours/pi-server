@@ -2,402 +2,517 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>My Pi Server</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pi Server — Dashboard</title>
 <style>
-  :root {
-    --bg: #0b0d14;
-    --surface: #13151f;
-    --surface2: #1c1f2e;
-    --border: #2a2d42;
-    --accent: #a78bfa;
-    --accent2: #60a5fa;
-    --text: #e2e8f0;
-    --muted: #94a3b8;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    padding: 24px 16px 60px;
-  }
-  header { text-align: center; margin-bottom: 28px; }
-  h1 { font-size: 1.7rem; font-weight: 800; color: var(--text); }
-  h1 span { color: var(--accent); }
-  header p { color: var(--muted); font-size: 0.9rem; margin-top: 6px; }
+:root {
+  --bg: #0b0d14;
+  --surface: #13151f;
+  --surface2: #1c1f2e;
+  --surface3: #232639;
+  --border: #2a2d42;
+  --accent: #a78bfa;
+  --accent2: #60a5fa;
+  --green: #34d399;
+  --yellow: #fbbf24;
+  --red: #f87171;
+  --orange: #fb923c;
+  --text: #e2e8f0;
+  --muted: #64748b;
+  --muted2: #94a3b8;
 
-  h2.page-section {
-    max-width: 1100px;
-    margin: 0 auto 4px;
-    font-size: 1.15rem;
-    font-weight: 800;
-    padding-top: 8px;
-  }
-  h2.page-section span.icon { margin-right: 6px; }
-  p.page-sub {
-    max-width: 1100px;
-    margin: 0 auto 18px;
-    font-size: 0.85rem;
-    color: var(--muted);
-  }
+  --fs-xs: 0.72rem;
+  --fs-sm: 0.82rem;
+  --fs-base: 0.88rem;
+  --fs-md: 0.92rem;
+  --fs-lg: 1.15rem;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+*:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
-  .divider {
-    max-width: 1100px;
-    margin: 40px auto 30px;
-    border: none;
-    border-top: 1px solid var(--border);
-  }
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 20;
+  padding: 14px 20px;
+}
+.topbar-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
+.logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.1rem; }
+.logo .dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; animation: pulse 2s infinite; flex-shrink: 0; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+.host-wrap { display: flex; gap: 8px; align-items: center; }
+.host-wrap label { font-size: var(--fs-xs); color: var(--muted2); white-space: nowrap; }
+.host-wrap input {
+  background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+  font-size: var(--fs-sm); padding: 7px 12px; border-radius: 8px; font-family: monospace;
+  width: 200px; outline: none;
+}
+.host-wrap input:focus { border-color: var(--accent); }
 
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 14px;
-    max-width: 1100px;
-    margin: 0 auto;
-  }
+.tabbar { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+.tabbar::-webkit-scrollbar { display: none; }
+.tab {
+  display: flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: 10px;
+  cursor: pointer; font-size: var(--fs-sm); font-weight: 600; color: var(--muted2);
+  white-space: nowrap; transition: all 0.15s; border: 1px solid transparent;
+}
+.tab:hover { background: var(--surface2); color: var(--text); }
+.tab:active { transform: scale(0.97); }
+.tab.active { background: var(--accent); color: #0f0c1a; }
 
-  a.tile, div.tile {
-    display: flex;
-    flex-direction: column;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 16px;
-    text-decoration: none;
-    color: var(--text);
-    transition: border-color 150ms ease, transform 150ms ease;
-    min-height: 130px;
-    position: relative;
-  }
-  a.tile:hover {
-    border-color: var(--accent);
-    transform: translateY(-2px);
-  }
-  div.tile {
-    color: var(--muted);
-    opacity: 0.7;
-  }
-  div.tile .tile-icon { filter: grayscale(40%); }
+main { padding: 20px; max-width: 1280px; margin: 0 auto; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px; }
 
-  .tile-icon { font-size: 1.6rem; margin-bottom: 8px; }
-  .tile-name { font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; color: var(--text); }
-  .tile-desc { font-size: 0.78rem; color: var(--muted); line-height: 1.4; flex: 1; }
-  .tile-link { font-size: 0.7rem; color: var(--accent2); margin-top: 8px; font-family: monospace; }
+.svc-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+  overflow: hidden; transition: border-color 0.2s;
+}
+.svc-card:hover { border-color: var(--accent); }
+.svc-top { display: flex; align-items: center; gap: 12px; padding: 14px 16px; }
+.svc-icon { font-size: 1.5rem; width: 38px; text-align: center; flex-shrink: 0; }
+.svc-info { flex: 1; min-width: 0; }
+.svc-name { font-weight: 700; font-size: var(--fs-base); }
+.svc-desc { font-size: var(--fs-sm); color: var(--muted2); margin-top: 2px; line-height: 1.4; }
+.svc-actions { display: flex; gap: 6px; padding: 0 16px 14px; }
+.btn {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 9px 10px; border-radius: 8px; font-size: var(--fs-sm); font-weight: 600;
+  cursor: pointer; border: 1px solid var(--border); transition: all 0.15s; text-decoration: none;
+}
+.btn:active { transform: scale(0.96); }
+.btn-open { background: var(--accent); color: #0f0c1a; border-color: var(--accent); }
+.btn-open:hover { background: var(--accent2); border-color: var(--accent2); }
+.btn-guide { background: var(--surface2); color: var(--text); }
+.btn-guide:hover { border-color: var(--accent); }
+.btn-guide.expanded { background: var(--surface3); color: var(--accent); }
+.btn-native { background: var(--surface2); color: var(--muted2); cursor: default; }
 
-  .badge {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    font-size: 0.62rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    background: var(--surface2);
-    color: var(--accent2);
-    border: 1px solid var(--border);
-    padding: 2px 8px;
-    border-radius: 20px;
-  }
+.svc-guide {
+  display: none; border-top: 1px solid var(--border); padding: 16px; background: var(--surface2);
+  font-size: var(--fs-sm); color: var(--muted2); line-height: 1.6;
+}
+.svc-guide.open { display: block; }
+.svc-guide ol { padding-left: 20px; }
+.svc-guide li { margin-bottom: 8px; }
+.svc-guide .gh { font-size: var(--fs-base); font-weight: 700; color: var(--text); margin: 14px 0 8px; }
+.svc-guide .gh:first-child { margin-top: 0; }
+.svc-guide .gwarn {
+  background: #1a1000; border-left: 3px solid var(--yellow); border-radius: 6px;
+  padding: 10px 12px; margin-top: 10px; color: #fde68a; font-size: var(--fs-sm);
+}
+.svc-guide code { background: var(--surface3); padding: 1px 6px; border-radius: 4px; font-family: monospace; color: var(--accent2); font-size: 0.85em; }
 
-  .section-label {
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin: 22px auto 10px;
-    max-width: 1100px;
-  }
+.tag { display: inline-block; font-size: var(--fs-xs); font-family: monospace; padding: 2px 8px; border-radius: 4px; background: var(--surface3); color: var(--accent2); border: 1px solid var(--border); margin-left: 8px; flex-shrink: 0; }
 
-  .ssd-banner {
-    max-width: 1100px;
-    margin: 14px auto 22px;
-    background: linear-gradient(135deg, rgba(167,139,250,0.12), rgba(96,165,250,0.12));
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 16px;
-    text-align: center;
-    font-size: 0.85rem;
-    color: var(--muted);
-  }
-  .ssd-banner strong { color: var(--text); }
+.section-label { font-size: var(--fs-xs); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 26px 0 12px; }
+.section-label:first-child { margin-top: 0; }
 
-  .note {
-    max-width: 1100px;
-    margin: 30px auto 0;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px 16px;
-    font-size: 0.82rem;
-    color: var(--muted);
-  }
-  .note strong { color: var(--text); }
+.callout {
+  background: linear-gradient(135deg, var(--surface) 0%, #1a0d35 100%);
+  border: 1px solid #3d2d6e; border-radius: 14px; padding: 18px 20px; margin-bottom: 20px;
+}
+.callout h3 { font-size: var(--fs-lg); margin-bottom: 6px; }
+.callout p { font-size: var(--fs-sm); color: var(--muted2); line-height: 1.6; }
 
-  .tabs {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    margin-bottom: 28px;
-  }
-  .tab-btn {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--muted);
-    font-size: 0.9rem;
-    font-weight: 700;
-    padding: 10px 22px;
-    border-radius: 24px;
-    cursor: pointer;
-    transition: all 150ms ease;
-  }
-  .tab-btn.active {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #0b0d14;
-  }
-  .page {
-    display: none;
-  }
-  .page.active {
-    display: block;
-  }
+footer { text-align: center; padding: 30px 20px; color: var(--muted); font-size: var(--fs-xs); }
 </style>
 </head>
 <body>
 
-<header>
-  <h1>My <span>Pi Server</span></h1>
-  <p>Everything in one place</p>
-</header>
-
-<div class="tabs">
-  <button class="tab-btn active" data-tab="current" onclick="showTab('current')">✅ Current</button>
-  <button class="tab-btn" data-tab="future" onclick="showTab('future')">🕓 Future</button>
+<div class="topbar">
+  <div class="topbar-row">
+    <div class="logo"><div class="dot"></div> Pi Server Dashboard</div>
+    <div class="host-wrap">
+      <label for="host-input">Host:</label>
+      <input type="text" id="host-input" placeholder="piserver.local" value="piserver.local">
+    </div>
+  </div>
+  <div class="tabbar" id="tabbar"></div>
 </div>
 
-<!-- ============ AVAILABLE NOW ============ -->
-<div class="page active" id="page-current">
-<h2 class="page-section"><span class="icon">✅</span>What I Can Use Right Now</h2>
-<p class="page-sub">Live and ready &mdash; tap a tile to open it</p>
+<main>
+  <div class="callout" id="intro-callout">
+    <h3>Click a service to open it. Click "Setup Guide" if you've never used it before.</h3>
+    <p>Links use the host above — switch it to your Tailscale IP to reach everything from outside your home network. Guides are based on what's actually deployed on this Pi, not generic docs.</p>
+  </div>
+  <div id="content"></div>
+</main>
 
-<p class="section-label">Media</p>
-<div class="grid">
-  <a class="tile" href="http://piserver.local:8096" target="_blank">
-    <div class="tile-icon">🎬</div>
-    <div class="tile-name">Jellyfin</div>
-    <div class="tile-desc">Watch your movies and TV shows, like a private Netflix.</div>
-    <div class="tile-link">:8096</div>
-  </a>
-  <a class="tile" href="http://piserver.local:4533" target="_blank">
-    <div class="tile-icon">🎵</div>
-    <div class="tile-name">Navidrome</div>
-    <div class="tile-desc">Stream your music library from any device.</div>
-    <div class="tile-link">:4533</div>
-  </a>
-  <a class="tile" href="http://piserver.local:8083" target="_blank">
-    <div class="tile-icon">📚</div>
-    <div class="tile-name">Calibre-Web</div>
-    <div class="tile-desc">Browse and read your ebook collection.</div>
-    <div class="tile-link">:8083</div>
-  </a>
-  <a class="tile" href="http://piserver.local:9925" target="_blank">
-    <div class="tile-icon">🍳</div>
-    <div class="tile-name">Mealie</div>
-    <div class="tile-desc">Save and organize recipes.</div>
-    <div class="tile-link">:9925</div>
-  </a>
-</div>
-
-<p class="section-label">Media Automation</p>
-<div class="grid">
-  <a class="tile" href="http://piserver.local:8989" target="_blank">
-    <div class="tile-icon">📺</div>
-    <div class="tile-name">Sonarr</div>
-    <div class="tile-desc">Tell it a TV show you want &mdash; it tracks and grabs new episodes.</div>
-    <div class="tile-link">:8989</div>
-  </a>
-  <a class="tile" href="http://piserver.local:7878" target="_blank">
-    <div class="tile-icon">🎥</div>
-    <div class="tile-name">Radarr</div>
-    <div class="tile-desc">Same idea as Sonarr, but for movies.</div>
-    <div class="tile-link">:7878</div>
-  </a>
-  <a class="tile" href="http://piserver.local:9696" target="_blank">
-    <div class="tile-icon">🔎</div>
-    <div class="tile-name">Prowlarr</div>
-    <div class="tile-desc">Manages the search sources Sonarr/Radarr use to find content.</div>
-    <div class="tile-link">:9696</div>
-  </a>
-  <a class="tile" href="http://piserver.local:8090" target="_blank">
-    <div class="tile-icon">⬇️</div>
-    <div class="tile-name">qBittorrent</div>
-    <div class="tile-desc">The actual download engine behind Sonarr/Radarr.</div>
-    <div class="tile-link">:8090</div>
-  </a>
-</div>
-
-<p class="section-label">Home</p>
-<div class="grid">
-  <a class="tile" href="http://piserver.local:8123" target="_blank">
-    <div class="tile-icon">🏡</div>
-    <div class="tile-name">Home Assistant</div>
-    <div class="tile-desc">Control smart lights, sensors, and devices from one place.</div>
-    <div class="tile-link">:8123</div>
-  </a>
-  <a class="tile" href="http://piserver.local:1880" target="_blank">
-    <div class="tile-icon">🔗</div>
-    <div class="tile-name">Node-RED</div>
-    <div class="tile-desc">Build automations by dragging boxes together &mdash; no coding.</div>
-    <div class="tile-link">:1880</div>
-  </a>
-  <a class="tile" href="http://piserver.local:9283" target="_blank">
-    <div class="tile-icon">🥫</div>
-    <div class="tile-name">Grocy</div>
-    <div class="tile-desc">Track what's in your pantry and your shopping list.</div>
-    <div class="tile-link">:9283</div>
-  </a>
-  <a class="tile" href="http://piserver.local:5678" target="_blank">
-    <div class="tile-icon">⚡</div>
-    <div class="tile-name">n8n</div>
-    <div class="tile-desc">Connect apps together and automate routine tasks.</div>
-    <div class="tile-link">:5678</div>
-  </a>
-</div>
-
-<p class="section-label">Network &amp; Admin</p>
-<div class="grid">
-  <a class="tile" href="http://piserver.local:8080/admin" target="_blank">
-    <div class="tile-icon">🛡️</div>
-    <div class="tile-name">Pi-hole</div>
-    <div class="tile-desc">Blocks ads and trackers network-wide.</div>
-    <div class="tile-link">:8080/admin</div>
-  </a>
-  <a class="tile" href="http://piserver.local:9000" target="_blank">
-    <div class="tile-icon">🐳</div>
-    <div class="tile-name">Portainer</div>
-    <div class="tile-desc">See and manage every running service on the Pi.</div>
-    <div class="tile-link">:9000</div>
-  </a>
-  <a class="tile" href="http://piserver.local:81" target="_blank">
-    <div class="tile-icon">🔀</div>
-    <div class="tile-name">Nginx Proxy Manager</div>
-    <div class="tile-desc">Sets up clean URLs and SSL for services.</div>
-    <div class="tile-link">:81</div>
-  </a>
-  <a class="tile" href="file://\\piserver.local\media">
-    <div class="tile-icon">📁</div>
-    <div class="tile-name">File Shares</div>
-    <div class="tile-desc">Drag and drop movies, shows, or ROMs from Windows.</div>
-    <div class="tile-link">\\piserver.local\media</div>
-  </a>
-</div>
-
-<div class="note">
-  <strong>Note:</strong> these links work from any device on your home network. Once Tailscale is set up on your phone, they'll also work from anywhere &mdash; just use the Tailscale IP instead of <code>piserver.local</code> when you're away from home.
-</div>
-</div><!-- /page-current -->
-
-<!-- ============ COMING SOON ============ -->
-<div class="page" id="page-future">
-<h2 class="page-section"><span class="icon">🕓</span>Coming Soon</h2>
-<p class="page-sub">Waiting on the NVMe SSD before these get installed</p>
-
-<div class="ssd-banner">
-  Once the 2TB SSD is in and the Pi's migrated over, all of this gets installed in one session &mdash; <strong>nothing here is broken, it just doesn't exist yet.</strong>
-</div>
-
-<p class="section-label">AI</p>
-<div class="grid">
-  <div class="tile"><span class="badge">Soon</span>
-    <div class="tile-icon">🤖</div>
-    <div class="tile-name">Open WebUI</div>
-    <div class="tile-desc">Your own private AI chat &mdash; like ChatGPT, but local and free forever.</div>
-  </div>
-  <div class="tile"><span class="badge">Soon</span>
-    <div class="tile-icon">🔍</div>
-    <div class="tile-name">Perplexica</div>
-    <div class="tile-desc">AI-powered search that browses the web for you.</div>
-  </div>
-  <div class="tile"><span class="badge">Soon</span>
-    <div class="tile-icon">🌐</div>
-    <div class="tile-name">SearXNG</div>
-    <div class="tile-desc">Private search engine that feeds your AI without tracking you.</div>
-  </div>
-  <div class="tile"><span class="badge">Soon</span>
-    <div class="tile-icon">🗣️</div>
-    <div class="tile-name">Voice Assistant</div>
-    <div class="tile-desc">Talk to your Pi out loud &mdash; fully offline, no Alexa/Siri.</div>
-  </div>
-</div>
-
-<p class="section-label">Personal Cloud</p>
-<div class="grid">
-  <div class="tile"><span class="badge">Soon</span>
-    <div class="tile-icon">🔑</div>
-    <div class="tile-name">Vaultwarden</div>
-    <div class="tile-desc">Your own private password manager.</div>
-  </div>
-  <div class="tile"><span class="badge">Soon</span>
-    <div class="tile-icon">📷</div>
-    <div class="tile-name">Immich</div>
-    <div class="tile-desc">Auto-backup your phone's photos &mdash; private Google Photos.</div>
-  </div>
-  <div class="tile"><span class="badge">Soon</span>
-    <div class="tile-icon">💰</div>
-    <div class="tile-name">Firefly III</div>
-    <div class="tile-desc">Track spending and budgets.</div>
-  </div>
-  <div class="tile"><span class="badge">Soon</span>
-    <div class="tile-icon">📊</div>
-    <div class="tile-name">Homepage + Uptime Kuma</div>
-    <div class="tile-desc">One dashboard for everything, plus alerts if anything goes down.</div>
-  </div>
-</div>
-
-<p class="section-label">Gaming</p>
-<div class="grid">
-  <div class="tile"><span class="badge">Soon</span>
-    <div class="tile-icon">🎮</div>
-    <div class="tile-name">RetroArch + EmulationStation</div>
-    <div class="tile-desc">Your retro game library, all consoles, one clean interface.</div>
-  </div>
-  <div class="tile"><span class="badge">Soon</span>
-    <div class="tile-icon">🟣</div>
-    <div class="tile-name">Dolphin</div>
-    <div class="tile-desc">GameCube and Wii emulation.</div>
-  </div>
-  <div class="tile"><span class="badge">Soon</span>
-    <div class="tile-icon">🔵</div>
-    <div class="tile-name">DuckStation</div>
-    <div class="tile-desc">PS1 emulation.</div>
-  </div>
-  <div class="tile"><span class="badge">Soon</span>
-    <div class="tile-icon">📡</div>
-    <div class="tile-name">Sunshine</div>
-    <div class="tile-desc">Stream games to your phone or another PC via Moonlight.</div>
-  </div>
-</div>
-
-<p class="section-label">AI Agent</p>
-<div class="grid">
-  <div class="tile"><span class="badge">Soon</span>
-    <div class="tile-icon">🦞</div>
-    <div class="tile-name">OpenClaw</div>
-    <div class="tile-desc">Message your Pi on Discord and it actually takes action &mdash; checks Home Assistant, manages downloads, answers business questions.</div>
-  </div>
-</div>
-</div><!-- /page-future -->
+<footer>Pi Server · piserver.local · update the host field above when away from home</footer>
 
 <script>
-  function showTab(name) {
-    document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
-    document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
-    document.getElementById('page-' + name).classList.add('active');
-    document.querySelector('.tab-btn[data-tab="' + name + '"]').classList.add('active');
-  }
-</script>
+const CATEGORIES = [
+  { id: 'mobile', label: '📱 Mobile' },
+  { id: 'network', label: '🌐 Network' },
+  { id: 'media', label: '🎬 Media' },
+  { id: 'home', label: '🏡 Home' },
+  { id: 'ai', label: '🤖 AI' },
+  { id: 'cloud', label: '☁️ Cloud' },
+  { id: 'gaming', label: '🎮 Gaming' },
+  { id: 'agent', label: '🦞 Agent' },
+];
 
+// setup arrays: plain strings = numbered steps. {h:"..."} = sub-header inside the guide. {warn:"..."} = callout box.
+const SERVICES = [
+
+  // ---- MOBILE ----
+  { id:'phone-dash', name:'Phone Dashboard', icon:'📱', category:'mobile', native:true, nativeLabel:'Open phone_dashboard.html',
+    desc:'Your mobile-optimized control panel — tap tiles to jump to any service.',
+    setup:[
+      {h:'Host it on the Pi (one-time)'},
+      'SSH into the Pi and create a permanent static file server for it — a small systemd service running <code>python3 -m http.server 8001</code> from wherever <code>phone_dashboard.html</code> lives, set to auto-restart and survive reboots.',
+      {h:'Add it to your phone'},
+      'On your phone browser, go to <code>http://[host]:8001/phone_dashboard.html</code>.',
+      'iOS Safari: Share → Add to Home Screen. Android Chrome: ⋮ menu → Add to Home Screen.',
+      'Open the new icon, go to its Setup tab, and set the host field to match — use your Tailscale IP when away from home.',
+      {warn:'my_pi_dashboard.html (the older dashboard file) is outdated — it still lists several live services as "Coming Soon." Use phone_dashboard.html going forward.'}
+    ]},
+
+  // ---- NETWORK ----
+  { id:'pihole', name:'Pi-hole', icon:'🛡️', category:'network', port:8080, path:'/admin',
+    desc:'Blocks ads and trackers for every device on your home network.',
+    setup:[
+      'Log in with the admin password you set during Phase 2 setup (check CREDENTIALS.md if you forgot it).',
+      'Go to Settings → DNS and confirm upstream DNS servers are set (8.8.8.8 / 1.1.1.1 recommended, per the project\'s own DNS-conflict fix).',
+      'On your router, set the primary DNS server for the whole network to this Pi\'s IP — that\'s what makes ad-blocking apply to every device automatically, not just ones you configure individually.',
+      {warn:'If you skip the router DNS step, Pi-hole only blocks ads for devices manually pointed at it.'}
+    ]},
+  { id:'npm', name:'Nginx Proxy Manager', icon:'🔀', category:'network', port:81,
+    desc:'Reverse proxy — clean URLs and SSL certificates for other services.',
+    setup:[
+      'First login default is <code>admin@example.com</code> / <code>changeme</code> — you will be forced to change both immediately.',
+      'Add a Proxy Host: enter a domain/subdomain, point it at the target service\'s container name and port, enable "Block Common Exploits."',
+      'Only worth setting up if you want clean internal URLs (e.g. jellyfin.home) instead of remembering ports — optional, not required for anything else to work.'
+    ]},
+  { id:'portainer', name:'Portainer', icon:'🐳', category:'network', port:9000,
+    desc:'Visual dashboard for managing every Docker container on the Pi.',
+    setup:[
+      'On first visit you have a short time window to set the admin username/password — if you miss it, you\'ll need to recreate the container.',
+      'Connect to the local Docker environment (it auto-detects this Pi\'s socket).',
+      'Use Containers to start/stop/restart anything, and Logs on any container when something looks broken — faster than SSH for a quick check.'
+    ]},
+  { id:'uptime-kuma', name:'Uptime Kuma', icon:'📈', category:'network', port:3001,
+    desc:'Monitors every service on the Pi and can alert you if something goes down.',
+    setup:[
+      'Create the admin account on first visit — there\'s no default login.',
+      'Add a Monitor for each service you care about (HTTP type, paste the local URL); set check interval to 60s.',
+      'Settings → Notifications to wire up Discord/email/push alerts so you find out before you notice something\'s broken yourself.'
+    ]},
+
+  // ---- MEDIA ----
+  { id:'jellyfin', name:'Jellyfin', icon:'🎞️', category:'media', tailscaleOnly:true, port:8096,
+    desc:'Your private Netflix — movies, TV, and music, streamed to any device.',
+    setup:[
+      'Open the first-run wizard: create an admin user, then add a Media Library pointing at your movies/TV folders.',
+      'Let it finish the initial metadata scan (can take a while the first time on a large library) before expecting posters/info to show up.',
+      'Install the Jellyfin app on your phone/TV and sign in with your Tailscale IP as the server address when away from home.',
+      {warn:'Jellyfin only plays what\'s already in its library folder — it doesn\'t download anything itself. See the Sonarr card for exactly how new TV episodes get downloaded and land in that folder automatically.'}
+    ]},
+  { id:'sonarr', name:'Sonarr', icon:'📺', category:'media', port:8989,
+    desc:'Automatically finds and downloads new TV episodes for shows you follow.',
+    setup:[
+      'Settings → Media Management: add your TV root folder.',
+      'Settings → Download Clients: add qBittorrent (host: this Pi, default port 8090).',
+      'Easiest path: set up Prowlarr first, then sync Sonarr as an "App" inside Prowlarr — it configures the indexers for you automatically.',
+      'Search → Add New Series for anything you want tracked; new episodes get grabbed and renamed without you doing anything else.',
+      {h:'Where downloads actually go (the full chain)'},
+      'qBittorrent saves raw downloads into a shared downloads folder first (a holding area, not your final library) — typically <code>/mnt/downloads</code> on this setup.',
+      'Once a download finishes, Sonarr automatically moves and renames it into your real TV library folder — typically <code>/mnt/media/tv/[Show Name]/Season XX/</code> — and deletes/keeps the original per your settings.',
+      'Jellyfin\'s media library is pointed at that same TV folder, so once Sonarr files an episode there, Jellyfin picks it up on its next library scan (usually within minutes) — you don\'t move or copy anything yourself.',
+      {warn:'The exact folder paths above are the standard convention for this setup, not guaranteed for your specific deployment — confirm the real paths under Sonarr\'s own Settings → Media Management (Root Folders) and Jellyfin\'s library settings if episodes aren\'t showing up. Radarr/movies works through the identical chain, just with a movies folder instead of TV.'}
+    ]},
+  { id:'radarr', name:'Radarr', icon:'🎬', category:'media', port:7878,
+    desc:'Same idea as Sonarr, but for movies.',
+    setup:[
+      'Settings → Media Management: add your movies root folder.',
+      'Settings → Download Clients: add qBittorrent, same as Sonarr.',
+      'Sync as a Prowlarr "App" rather than configuring indexers twice.',
+      'Add movies via search; Radarr grabs and files them automatically once available.'
+    ]},
+  { id:'prowlarr', name:'Prowlarr', icon:'🔎', category:'media', port:9696,
+    desc:'Manages the search sources (indexers) that Sonarr and Radarr both use.',
+    setup:[
+      'Indexers → Add Indexer: add whichever trackers/indexers you use.',
+      'Settings → Apps: connect Sonarr and Radarr here — this is what lets Prowlarr push indexer config to both automatically instead of you setting them up twice.'
+    ]},
+  { id:'qbittorrent', name:'qBittorrent', icon:'⬇️', category:'media', port:8090,
+    desc:'The download engine working behind Sonarr/Radarr.',
+    setup:[
+      'Default login is <code>admin</code> / <code>adminadmin</code> — change this immediately under Tools → Options → Web UI.',
+      'Options → Downloads: confirm the default save path matches what Sonarr/Radarr expect (usually a shared /downloads folder).',
+      {warn:'This one is reachable on your network by default with a known default password until you change it — do that first, before anything else.'}
+    ]},
+  { id:'navidrome', name:'Navidrome', icon:'🎵', category:'media', port:4533,
+    desc:'Stream your personal music library from any device.',
+    setup:[
+      'Create the admin account on first visit.',
+      'It auto-scans the music folder you mounted in its config — give it a few minutes on a large library.',
+      'Use any Subsonic-compatible app (Symfonium, Ultrasonic) on your phone — point it at this server\'s address.'
+    ]},
+  { id:'mealie', name:'Mealie', icon:'🍳', category:'media', port:9925,
+    desc:'Save and organize recipes, plan meals.',
+    setup:[
+      'Create your account on first visit.',
+      'Add a recipe by pasting a URL from almost any recipe site — it parses ingredients/steps automatically instead of you typing them in.',
+      'Use the Meal Planner to build a week, then Shopping List to generate what you need to buy.'
+    ]},
+  { id:'calibre-web', name:'Calibre-Web', icon:'📚', category:'media', port:8083,
+    desc:'Browse and read your ebook collection from any device.',
+    setup:[
+      'Default login is <code>admin</code> / <code>admin123</code> — change immediately under Admin settings.',
+      'Point it at your Calibre library folder during initial setup.',
+      'Read directly in-browser, or download/send to a Kindle from any book\'s page.'
+    ]},
+
+  // ---- HOME ----
+  { id:'homeassistant', name:'Home Assistant', icon:'🏡', category:'home', port:8123,
+    desc:'Smart home control hub — lights, sensors, devices, automations.',
+    setup:[
+      'Complete the onboarding wizard: create your account, confirm location/timezone.',
+      'Important: Home Assistant runs in host networking mode on this Pi already, which is exactly what local device discovery needs — no extra network setup required on the HA side.',
+      {h:'Adding TP-Link Tapo devices'},
+      'Pair each plug/bulb in the Tapo app first and update its firmware.',
+      'In the Tapo app, check Device Settings for a "Third-Party Compatibility" or "Local Account" toggle — enable it if present.',
+      'In HA: Settings → Devices & Services → Add Integration → search "Tapo" (may show as "TP-Link Smart Home"). Sign in with your TP-Link cloud account when prompted.',
+      {h:'Adding Geeni devices (these are Tuya under the hood)'},
+      'Do not search "Geeni" — it doesn\'t exist as its own integration. If still using the Geeni app, migrate devices to Smart Life or Tuya Smart first.',
+      'In HA: Add Integration → search "Tuya" → sign in with your Smart Life/Tuya Smart account → pick the same country/data center you used when creating that account.',
+      {h:'Adding WiZ devices'},
+      'In the WiZ app: settings icon (top-left) → security section → enable "Allow Local Communication" for each bulb.',
+      'In HA: Add Integration → search "WiZ" — auto-discovery finds them on the same network, no login needed.',
+      {warn:'For all three brands: check your router for "AP Isolation" / "Client Isolation" and make sure it\'s OFF — this silently blocks Home Assistant from reaching any of these devices.'},
+      {h:'Connecting to the server from your phone'},
+      'Install the "Home Assistant" app (iOS/Android) — this is different from the Tapo/WiZ/Smart Life apps, it\'s the control app for the whole hub.',
+      'On first launch it asks for a server address. At home, use <code>http://[host]:8123</code>. Away from home, use your Tailscale IP instead — install the Tailscale app on your phone first so it can actually reach the Pi.',
+      'Log in with the account you created during the HA onboarding wizard (not your Tapo/Tuya/WiZ account — those are separate, only used during device setup above).',
+      'Once connected, enable "Assist" (the microphone button) in the app for voice control, and turn on location tracking if you want presence-based automations (lights off when you leave, etc.).'
+    ]},
+  { id:'nodered', name:'Node-RED', icon:'🔗', category:'home', port:1880,
+    desc:'Build home automations by connecting boxes on a canvas — no coding required.',
+    setup:[
+      'Open it — no login by default unless you\'ve configured one.',
+      'Drag nodes from the left palette onto the canvas and wire them together (e.g. a time trigger → a Home Assistant service call).',
+      'Click Deploy (top-right) to activate any flow you build.'
+    ]},
+  { id:'grocy', name:'Grocy', icon:'🥫', category:'home', port:9283,
+    desc:'Tracks what\'s in your pantry and your shopping list.',
+    setup:[
+      'Default login is <code>demo</code> / <code>demo</code> on first run, unless the setup wizard prompted you to create an account — change the password either way.',
+      'Add products under Master Data, then log purchases/consumption as you go so stock stays accurate.',
+      'Pairs well with Mealie — plan meals there, track what you actually have in Grocy.'
+    ]},
+
+  // ---- AI ----
+  { id:'openwebui', name:'Open WebUI', icon:'💬', category:'ai', port:3000,
+    desc:'Your own private ChatGPT-style chat interface, running on your hardware.',
+    setup:[
+      'The very first account created becomes the admin account — sign up like you would for any normal app.',
+      'Settings → Models: confirm it sees your Ollama models (it talks to Ollama at <code>localhost:11434</code> automatically).',
+      'Settings → Web Search: point it at SearXNG (<code>http://[host]:4000</code>) to let it search the web with citations.'
+    ]},
+  { id:'searxng', name:'SearXNG', icon:'🌐', category:'ai', port:4000,
+    desc:'Private metasearch engine — feeds web search to your AI tools without tracking you.',
+    setup:[
+      'No account needed — just search directly, or let Open WebUI/Perplexica use it as their search backend.'
+    ]},
+  { id:'perplexica', name:'Perplexica', icon:'🔍', category:'ai', port:3003,
+    desc:'AI-powered search assistant that browses the web and summarizes results.',
+    setup:[
+      'Settings (gear icon): confirm the Ollama API URL and SearXNG URL are pointed at this Pi if not auto-detected.',
+      'Ask it a research question directly — it searches, reads, and cites sources in its answer.'
+    ]},
+  { id:'n8n', name:'n8n', icon:'⚡', category:'ai', port:5678,
+    desc:'Workflow automation — connect different apps and services together.',
+    setup:[
+      'Create the owner account on first visit.',
+      'New Workflow → drag nodes (Trigger → Action) to build something, e.g. "every Sunday, pull Firefly III transactions, summarize with Ollama, send to phone."',
+      'Activate a workflow (toggle, top-right) once you\'re happy with it — inactive workflows can still be tested manually but won\'t run on a schedule.'
+    ]},
+  { id:'homepage', name:'Homepage', icon:'📊', category:'ai', port:3002,
+    desc:'A single dashboard linking out to everything else.',
+    setup:[
+      'Config is file-based, not UI-based — edit the YAML config files in its Docker volume to add/remove services and widgets.',
+      'Lower priority if you\'re already using this interactive dashboard day-to-day.'
+    ]},
+  { id:'ollama', name:'Ollama', icon:'🧠', category:'ai', native:true, nativeLabel:'API only — no web page',
+    desc:'Runs the AI models locally — the engine behind Open WebUI and OpenClaw.',
+    setup:[
+      'Nothing to configure directly — it\'s a background API service on port 11434, used by Open WebUI and OpenClaw, not something you open yourself.',
+      'To check what\'s installed: <code>ollama list</code> over SSH. To add a model: <code>ollama pull [model-name]</code>.'
+    ]},
+
+  // ---- CLOUD ----
+  { id:'vaultwarden', name:'Vaultwarden', icon:'🔑', category:'cloud', port:8082,
+    desc:'Self-hosted password manager, compatible with the Bitwarden app.',
+    setup:[
+      'Create your account on first visit (signups are enabled initially).',
+      {warn:'Do this first: once your account exists, disable new signups (SIGNUPS_ALLOWED) in its config and restart the container — otherwise anyone who reaches this URL can create a vault account.'},
+      'Install the Bitwarden app/browser extension and set the server URL to this Pi\'s address before logging in.'
+    ]},
+  { id:'firefly', name:'Firefly III', icon:'💰', category:'cloud', port:8085,
+    desc:'Personal finance tracker — budgets, spending, accounts.',
+    setup:[
+      'Complete the setup wizard: create your admin user and set your base currency.',
+      'Add accounts manually, or use the Data Importer for bank CSV/API imports.',
+      'Set up budgets under Budgets so the dashboard actually means something beyond raw transaction logs.'
+    ]},
+  { id:'immich', name:'Immich', icon:'📷', category:'cloud', port:2283,
+    desc:'Private photo backup — like Google Photos, but yours.',
+    setup:[
+      'Create the admin account on first visit.',
+      'Install the Immich app on your phone, set the server URL to this Pi (use your Tailscale IP for away-from-home backup), and enable background backup.',
+      'First sync of an existing photo library can take a while — let it run.'
+    ]},
+  { id:'nextcloud', name:'Nextcloud', icon:'📁', category:'cloud', port:8084,
+    desc:'Private file storage and sync — like a personal Dropbox.',
+    setup:[
+      'Finish the first-run wizard in your browser — it auto-detects the MariaDB credentials from its own config, you just create the admin account.',
+      'Install the Nextcloud desktop app and/or mobile app, point it at this server, and pick which folders to sync.',
+      'Recommended apps to enable from the Nextcloud App Store: Calendar, Contacts, Notes.'
+    ]},
+
+  // ---- GAMING ----
+  { id:'emulationstation', name:'EmulationStation DE', icon:'🎭', category:'gaming', native:true, nativeLabel:'Launch on the Pi directly',
+    desc:'A unified, browsable library across all your emulators and ROMs.',
+    setup:[
+      'Launches directly on the Pi\'s connected display — not browser-based.',
+      'ROM folders live under <code>/mnt/games/roms/</code>, organized by console (snes, n64, psx, gamecube, etc.) — drop ROMs in the matching subfolder and restart to pick them up.',
+      'It auto-launches the right emulator (RetroArch core, Dolphin, DuckStation, or PPSSPP) based on which console folder a game came from.'
+    ]},
+  { id:'retroarch', name:'RetroArch', icon:'🕹️', category:'gaming', native:true, nativeLabel:'Launch on the Pi directly',
+    desc:'Universal emulator engine covering most classic consoles.',
+    setup:[
+      'Load Core → Download a Core to add support for a specific console (Mupen64Plus-Next for N64, Snes9x for SNES, etc.).',
+      'One controller configuration applies across every core once set up.'
+    ]},
+  { id:'dolphin', name:'Dolphin', icon:'🐬', category:'gaming', native:true, nativeLabel:'Launch on the Pi directly',
+    desc:'GameCube and Wii emulation.',
+    setup:['Best settings for Pi 5: Vulkan graphics backend, 2x Native internal resolution, async shader compilation.']},
+  { id:'duckstation', name:'DuckStation', icon:'🔵', category:'gaming', native:true, nativeLabel:'Launch on the Pi directly',
+    desc:'PS1 emulation.', setup:['Point its BIOS folder at your PS1 BIOS files before first launch — required for it to boot games.']},
+  { id:'ppsspp', name:'PPSSPP', icon:'🎮', category:'gaming', native:true, nativeLabel:'Launch on the Pi directly',
+    desc:'PSP emulation.', setup:['Point it at your ROM folder on first launch — runs most of the PSP library at full speed on Pi 5.']},
+  { id:'sunshine', name:'Sunshine', icon:'📡', category:'gaming', native:true, nativeLabel:'Pair via Moonlight app',
+    desc:'Streams games from the Pi to your phone or PC.',
+    setup:[
+      'Install the Moonlight app on your phone/PC/tablet.',
+      'In Moonlight, add this Pi as a host using its IP — it\'ll prompt for a PIN shown on the Pi\'s Sunshine web UI to pair the first time.',
+      'Once paired, launch any game from the Pi and stream it live to that device.'
+    ]},
+
+  // ---- AGENT ----
+  { id:'openclaw', name:'OpenClaw', icon:'🦞', category:'agent', native:true, nativeLabel:'Open in Discord',
+    href:'https://discord.com/app',
+    desc:'AI agent that lives in Discord — business + personal personas, can actually take action.',
+    setup:[
+      'Message it directly in #business or #personal — no separate login, it routes by which channel you post in.',
+      'Its primary model runs on your laptop over Tailscale for speed; if the laptop\'s offline, it automatically falls back to a local model on the Pi, so it stays responsive either way.',
+      'Ask it things like "what\'s my workspace folder?" in both channels to confirm you\'re getting two distinct personas, not one generic bot.'
+    ]},
+];
+
+function getHost() { return document.getElementById('host-input').value.trim() || 'piserver.local'; }
+
+function buildUrl(svc) {
+  const host = getHost();
+  const port = svc.port ? ':' + svc.port : '';
+  const path = svc.path || '';
+  return 'http://' + host + port + path;
+}
+
+function renderGuide(setup) {
+  let html = '';
+  let inList = false;
+  setup.forEach(item => {
+    if (typeof item === 'string') {
+      if (!inList) { html += '<ol>'; inList = true; }
+      html += '<li>' + item + '</li>';
+    } else if (item.h) {
+      if (inList) { html += '</ol>'; inList = false; }
+      html += '<div class="gh">' + item.h + '</div><ol>';
+      inList = true;
+    } else if (item.warn) {
+      if (inList) { html += '</ol>'; inList = false; }
+      html += '<div class="gwarn">⚠️ ' + item.warn + '</div>';
+    }
+  });
+  if (inList) html += '</ol>';
+  return html;
+}
+
+function renderCard(svc) {
+  const guideId = 'guide-' + svc.id;
+  let actionHtml;
+  if (svc.native) {
+    if (svc.href) {
+      actionHtml = '<a class="btn btn-open" href="' + svc.href + '" target="_blank" rel="noopener">' + svc.nativeLabel + '</a>';
+    } else {
+      actionHtml = '<div class="btn btn-native">' + svc.nativeLabel + '</div>';
+    }
+  } else {
+    actionHtml = '<a class="btn btn-open" href="#" data-svc="' + svc.id + '" onclick="openService(event, this)">Open →</a>';
+  }
+  const portTag = svc.port ? '<span class="tag">:' + svc.port + (svc.path||'') + '</span>' : (svc.tailscaleOnly ? '<span class="tag">Tailscale only</span>' : '');
+
+  return '<div class="svc-card">' +
+    '<div class="svc-top">' +
+      '<div class="svc-icon">' + svc.icon + '</div>' +
+      '<div class="svc-info"><div class="svc-name">' + svc.name + portTag + '</div><div class="svc-desc">' + svc.desc + '</div></div>' +
+    '</div>' +
+    '<div class="svc-actions">' +
+      actionHtml +
+      '<button class="btn btn-guide" id="btn-' + svc.id + '" onclick="toggleGuide(\'' + svc.id + '\')">📖 Setup Guide</button>' +
+    '</div>' +
+    '<div class="svc-guide" id="' + guideId + '">' + renderGuide(svc.setup) + '</div>' +
+  '</div>';
+}
+
+function openService(e, el) {
+  e.preventDefault();
+  const svc = SERVICES.find(s => s.id === el.getAttribute('data-svc'));
+  window.open(buildUrl(svc), '_blank');
+}
+
+function toggleGuide(id) {
+  const panel = document.getElementById('guide-' + id);
+  const btn = document.getElementById('btn-' + id);
+  const isOpen = panel.classList.contains('open');
+  panel.classList.toggle('open', !isOpen);
+  btn.classList.toggle('expanded', !isOpen);
+}
+
+function renderCategory(catId) {
+  const items = SERVICES.filter(s => s.category === catId);
+  return '<div class="grid">' + items.map(renderCard).join('') + '</div>';
+}
+
+let activeTab = 'mobile';
+function showTab(id) {
+  activeTab = id;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === id));
+  document.getElementById('content').innerHTML = renderCategory(id);
+  document.getElementById('intro-callout').style.display = id === 'mobile' ? 'block' : 'none';
+}
+
+function init() {
+  const savedHost = localStorage.getItem('pi-dash-host');
+  if (savedHost) document.getElementById('host-input').value = savedHost;
+  document.getElementById('host-input').addEventListener('change', e => {
+    localStorage.setItem('pi-dash-host', e.target.value.trim());
+  });
+
+  const tabbar = document.getElementById('tabbar');
+  tabbar.innerHTML = CATEGORIES.map(c =>
+    '<div class="tab" data-tab="' + c.id + '" onclick="showTab(\'' + c.id + '\')">' + c.label + '</div>'
+  ).join('');
+
+  showTab('mobile');
+}
+init();
+</script>
 </body>
 </html>
